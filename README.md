@@ -68,3 +68,11 @@ src/
 - Bản này **chưa có PWA/offline** như bản cũ (không chọn khi lên kế hoạch). Có thể thêm lại bằng `vite-plugin-pwa`.
 - Từ riêng (CSV) vẫn chỉ áp dụng cho tiếng Anh.
 - Lịch sử chơi lưu thêm trường `mode`, nhưng bảng `sessions` trên Supabase chưa có cột này nên không đẩy lên.
+
+## Đăng lên GitHub Pages
+Có sẵn `.github/workflows/deploy.yml`: mỗi lần push lên `main` sẽ chạy `npm test`, build rồi đăng lên Pages.
+1. GitHub repo → **Settings → Pages → Source: GitHub Actions** (làm một lần).
+2. (Nếu dùng Supabase) **Settings → Secrets and variables → Actions**: thêm `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+3. (Nếu dùng Supabase) Supabase → **Authentication → URL Configuration**: thêm địa chỉ trang Pages (vd `https://<user>.github.io/<repo>/`) vào Site URL / Redirect URLs, để đăng nhập Google và link xác nhận email quay về đúng trang.
+
+`vite.config.js` dùng `base: './'` nên không phụ thuộc tên repo.
