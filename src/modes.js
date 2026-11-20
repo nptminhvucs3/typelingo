@@ -1,0 +1,47 @@
+// Danh sách chế độ, xếp theo độ khó. `steps` là hướng dẫn 3 bước hiện trước khi chơi,
+// `tip` là câu nhắc ngắn hiện trên thanh trên cùng khi đang chơi.
+export const GROUPS = [
+  { id: 'easy', name: 'Bước 1 · Làm quen', short: 'Làm quen', desc: 'Chỉ cần bấm chọn, không phải gõ. Hợp để học từ mới.' },
+  { id: 'mid', name: 'Bước 2 · Luyện tập', short: 'Luyện tập', desc: 'Dùng từ trong câu, nghe và gõ lại, có gợi ý.' },
+  { id: 'hard', name: 'Bước 3 · Thử thách', short: 'Thử thách', desc: 'Tính giờ, tự gõ từ, khi đã khá quen.' },
+  { id: 'talk', name: 'Nói', short: 'Nói', desc: 'Luyện nói với AI.' },
+];
+
+export const MODES = [
+  { id: 'flash', icon: '🗂️', name: 'Thẻ chọn nghĩa', group: 'easy',
+    desc: 'Xem từ, chọn 1 trong 3 nghĩa tiếng Việt.',
+    steps: ['Đọc từ (bấm 🔊 để nghe).', 'Bấm vào nghĩa đúng trong 3 ô bên dưới (hoặc phím 1, 2, 3).', 'Xem câu ví dụ rồi bấm Tiếp. Từ chọn sai sẽ quay lại cuối bộ.'],
+    tip: 'Chọn nghĩa đúng của từ' },
+  { id: 'match', icon: '🧩', name: 'Ghép cặp', group: 'easy',
+    desc: 'Nối từ với nghĩa tiếng Việt.',
+    steps: ['Bấm một từ ở cột trái.', 'Bấm nghĩa của nó ở cột phải.', 'Đúng thì cặp biến mất. Ghép hết để sang bảng mới.'],
+    tip: 'Bấm 1 từ bên trái, rồi bấm nghĩa bên phải' },
+  { id: 'quiz', icon: '✅', name: 'Chọn từ cho câu', group: 'mid', needsEx: true,
+    desc: 'Câu có chỗ trống, chọn từ đúng để điền.',
+    steps: ['Đọc câu, tìm chỗ trống ____.', 'Chưa hiểu câu? Bấm 💡 để xem nghĩa tiếng Việt.', 'Bấm từ phù hợp trong 4 lựa chọn.'],
+    tip: 'Chọn từ điền vào chỗ trống' },
+  { id: 'listen', icon: '🎧', name: 'Nghe rồi gõ', group: 'mid',
+    desc: 'Nghe đọc một từ, gõ lại từ đó.',
+    steps: ['Bấm 🔊 để nghe (🐢 để nghe chậm).', 'Gõ lại từ vừa nghe. Có sẵn nghĩa và số chữ cái để gợi ý.', 'Nhấn Enter để kiểm tra. Sai được nghe lại và thử thêm 1 lần.'],
+    tip: 'Nghe và gõ lại từ' },
+  { id: 'cloze', icon: '✍️', name: 'Điền từ vào câu', group: 'mid', needsEx: true,
+    desc: 'Câu khuyết một từ, tự gõ từ còn thiếu.',
+    steps: ['Đọc câu và nghĩa gợi ý của từ còn thiếu.', 'Gõ từ đó, chữ cái đầu đã có sẵn. Bấm 💡 để hiện thêm chữ.', 'Nhấn Enter để kiểm tra.'],
+    tip: 'Gõ từ còn thiếu trong câu' },
+  { id: 'fallchoice', icon: '🎯', name: 'Từ rơi · chọn nghĩa', group: 'hard',
+    desc: 'Từ rơi xuống, chọn nghĩa đúng trước khi chạm đáy.',
+    steps: ['Một từ rơi từ trên xuống.', 'Bấm nghĩa đúng trong 3 ô bên dưới (phím 1, 2, 3).', 'Để từ chạm đáy hoặc chọn sai sẽ mất 1 ♥.'],
+    tip: 'Chọn nghĩa trước khi từ chạm đáy' },
+  { id: 'fall', icon: '⌨️', name: 'Từ rơi · gõ 2 bước', group: 'hard',
+    desc: 'Gõ từ đang rơi, rồi gõ nghĩa tiếng Việt.',
+    steps: ['Gõ từ ngoại ngữ đang rơi rồi nhấn Space hoặc Enter.', 'Thẻ đổi màu xanh: gõ tiếp nghĩa tiếng Việt (Telex/VNI).', 'Đừng để thẻ chạm đáy. Esc để tạm dừng.'],
+    tip: 'Gõ từ đang rơi → Space/Enter' },
+  { id: 'reverse', icon: '↔️', name: 'Việt → ngoại ngữ', group: 'hard',
+    desc: 'Nhìn nghĩa tiếng Việt, tự gõ từ ngoại ngữ.',
+    steps: ['Mỗi dòng có một nghĩa tiếng Việt và số chữ cái của từ cần gõ.', 'Gõ từ vào ô bên phải rồi nhấn Enter. Bí thì bấm 💡.', 'Làm hết các dòng rồi bấm Nộp bài.'],
+    tip: 'Gõ từ ngoại ngữ cho từng nghĩa' },
+  { id: 'speak', icon: '🎙️', name: 'Nói chuyện với AI', group: 'talk',
+    desc: 'Luyện nói với Gemini theo chủ đề.' },
+];
+export const modeById = id => MODES.find(m => m.id === id);
+export const groupOf = id => GROUPS.find(g => g.id === id);
