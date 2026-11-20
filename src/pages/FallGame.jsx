@@ -1,6 +1,7 @@
 // Từ rơi. Chế độ 'fall' giữ kịch bản cũ: gõ từ ngoại ngữ → hiện nghĩa → gõ nghĩa tiếng Việt (Telex/VNI).
 // Chế độ 'fall1' (gõ 1 bước): chỉ gõ từ ngoại ngữ, xong là hiện nghĩa bên dưới.
 import React, { useEffect, useRef, useState } from 'react';
+import Icon from '../components/Icon.jsx';
 import { settings } from '../lib/store.js';
 import { compose } from '../lib/engine.js';
 import { POS_VI, LANGS, weight } from '../lib/words.js';
@@ -164,10 +165,10 @@ export default function FallGame({ mode, items, label, lang, onFinish, onAgain, 
   }
   return (
     <div className="fall">
-      <p className="gb-tip">👉 {mode.tip}{one ? '' : ', khi thẻ chuyển xanh thì gõ nghĩa tiếng Việt'} · Esc tạm dừng</p>
+      <p className="gb-tip"><span className={'gb-icon ' + mode.group}><Icon name={mode.ico} size={26} /></span>{mode.tip}{one ? '' : ', khi thẻ chuyển xanh thì gõ nghĩa tiếng Việt'} · Esc tạm dừng</p>
       <div className="hud">
-        <span>🏆 {hud.score}</span><span>Mốc {Math.min(hud.level, 20)}/20 · {label}</span>
-        <span>{hud.wpm} WPM</span><span>x{hud.combo.toFixed(1)}</span><span className="hearts">{'♥'.repeat(Math.max(0, hud.lives))}</span>
+        <span className="il"><Icon name="cup" size={22} /> {hud.score}</span><span>Mốc {Math.min(hud.level, 20)}/20 · {label}</span>
+        <span>{hud.wpm} WPM</span><span>x{hud.combo.toFixed(1)}</span><span className="hearts">{Array.from({ length: Math.max(0, hud.lives) }, (_, k) => <Icon key={k} name="tim" size={20} />)}</span>
         <button className="icon-btn" onClick={() => G.current.setPause(!G.current.paused)}>⏸</button>
       </div>
       <div className="stage" ref={stageRef} onPointerDown={e => { e.preventDefault(); inputRef.current?.focus({ preventScroll: true }); }}>

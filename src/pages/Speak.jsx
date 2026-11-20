@@ -7,6 +7,8 @@ import { LANGS } from '../lib/words.js';
 import { hasKey, chat, generate } from '../lib/gemini.js';
 import { startLive } from '../lib/live.js';
 import { speak } from '../lib/speech.js';
+import Mascot from '../components/Mascot.jsx';
+import Icon from '../components/Icon.jsx';
 
 const TOPICS = [
   ['free', '💬 Nói tự do'], ['intro', '🙋 Giới thiệu bản thân'], ['daily', '☀️ Sinh hoạt hằng ngày'], ['work', '💼 Công việc'],
@@ -125,7 +127,7 @@ export default function Speak() {
   if (!hasKey()) {
     return (
       <div className="page narrow">
-        <div className="page-head"><h1>🎙️ Nói chuyện với AI</h1></div>
+        <div className="page-head with-mascot"><Mascot mood="thinking" size={84} /><h1 className="il"><Icon name="noi-chuyen-ai" size={36} /> Nói chuyện với AI</h1></div>
         <div className="card">
           <p>Chế độ này cần <b>Gemini API key</b> miễn phí của bạn. Key chỉ lưu trên máy này, không gửi lên máy chủ của app.</p>
           <ol className="steps"><li>Vào <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a> → Create API key.</li><li>Dán key vào <b>Cài đặt → Gemini AI</b>.</li></ol>
@@ -138,7 +140,7 @@ export default function Speak() {
   const running = state === 'connecting' || state === 'live';
   return (
     <div className="page speak">
-      <div className="page-head"><h1>🎙️ Nói chuyện với AI</h1><p>Luyện nói {LANGS[lang].name.toLowerCase()} với Gemini. AI sẽ sửa lỗi nhẹ nhàng ngay trong hội thoại.</p></div>
+      <div className="page-head with-mascot"><Mascot mood={state === 'live' ? 'listening' : 'speaking'} size={84} /><div><h1 className="il"><Icon name="noi-chuyen-ai" size={36} /> Nói chuyện với AI</h1><p>Luyện nói {LANGS[lang].name.toLowerCase()} với Gemini. AI sẽ sửa lỗi nhẹ nhàng ngay trong hội thoại.</p></div></div>
       {!running && (
         <div className="card">
           <h3>Chủ đề</h3>

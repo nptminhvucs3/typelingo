@@ -1,4 +1,4 @@
-// Thẻ chọn nghĩa: từ ngoại ngữ ở trên, 3 nghĩa tiếng Việt bên dưới để chọn (phím 1/2/3).
+// Thẻ chọn nghĩa: từ ngoại ngữ ở trên, 3 nghĩa tiếng Việt bên dưới. Chọn (phím 1/2/3, đổi ý được) rồi bấm Kiểm tra (Enter).
 // Chọn sai thì thẻ quay lại cuối bộ để gặp lại.
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../ctx.js';
@@ -21,7 +21,8 @@ export default function Flash({ mode, items, lang, onFinish, onAgain, onExit }) 
   }, [items]);
   const [deck, setDeck] = useState(init);
   const [opts, setOpts] = useState([]);
-  const [pick, setPick] = useState(null);
+  const [sel, setSel] = useState(null);   // đáp án đang chọn, chưa chấm
+  const [pick, setPick] = useState(null); // đáp án đã chấm
   const [done, setDone] = useState(0);
   const [turn, setTurn] = useState(0);
   const [log, setLog] = useState([]); // {w, ok}
@@ -30,11 +31,13 @@ export default function Flash({ mode, items, lang, onFinish, onAgain, onExit }) 
   useEffect(() => {
     if (!w) return;
     setOpts(shuffle([w, ...distractors(w, items, all, 2)]));
-    setPick(null);
+    setPick(null); setSel(null);
     if (settings.speakEn) speak(w.en, tl);
   }, [turn]); // eslint-disable-line
 
-  const choose = o => {
+  const choose = o => { if (!pick && o) { setSel(o); sfx.tap(); } };
+  const check = () => {
+    const o = sel;
     if (pick || !o) return;
     const ok = o.id === w.id;
     setPick(o);
@@ -57,8 +60,9 @@ export default function Flash({ mode, items, lang, onFinish, onAgain, onExit }) 
   useEffect(() => {
     const k = e => {
       if (!w) return;
+      const onBtn = e.target.tagName === 'BUTTON' && !e.target.classList.contains('opt');
       if (!pick && ['1', '2', '3'].includes(e.key)) choose(opts[+e.key - 1]);
-      else if (pick && (e.key === 'Enter' || e.key === ' ') && e.target.tagName !== 'BUTTON') { e.preventDefault(); next(); }
+      else if (e.key === 'Enter' && !onBtn) { e.preventDefault(); if (pick) next(); else check(); }
     };
     addEventListener('keydown', k); return () => removeEventListener('keydown', k);
   });
@@ -84,12 +88,12 @@ export default function Flash({ mode, items, lang, onFinish, onAgain, onExit }) 
       <p className="ask">Từ này nghĩa là gì?</p>
       <div className="choices col">
         {opts.map((o, k) => (
-          <button key={o.id} className={'opt big' + (pick ? (o.id === w.id ? ' ok' : pick === o ? ' bad' : ' dim') : '')} onClick={() => choose(o)}>
+          <button key={o.id} className={'opt big' + (pick ? (o.id === w.id ? ' ok' : pick === o ? ' bad' : ' dim') : sel === o ? ' sel' : '')} onClick={() => choose(o)} aria-pressed={sel === o}>
             <b className="key">{k + 1}</b><span>{o.vi}</span>{pick && o.id !== w.id && <small>{o.disp}</small>}
           </button>
         ))}
       </div>
-      <CheckBar state={pick ? (ok ? 'ok' : 'bad') : null} onNext={next} answer={w.vi}
+      <CheckBar state={pick ? (ok ? 'ok' : 'bad') : null} onCheck={check} canCheck={!!sel} onNext={next} answer={w.vi}
         detail={pick && (w.ex ? <>{w.disp} = {w.vi}<br />{w.ex}<br /><em>{w.exvi}</em></> : <>{w.disp} = {w.vi}</>)} />
     </div>
   );

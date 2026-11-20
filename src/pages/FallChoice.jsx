@@ -1,5 +1,6 @@
 // Rơi chọn nghĩa: một từ rơi xuống, bên dưới có 3 nghĩa (gần nghĩa / cùng chủ đề) để chọn. Phím 1/2/3 cũng được.
 import React, { useEffect, useRef, useState } from 'react';
+import Icon from '../components/Icon.jsx';
 import { useApp } from '../ctx.js';
 import { LANGS, POS_VI, pickWeighted, shuffle } from '../lib/words.js';
 import { mark, accOf, distractors } from '../lib/answer.js';
@@ -64,8 +65,8 @@ export default function FallChoice({ mode, items, lang, onFinish, onAgain, onExi
   if (res) return <Result title="Hết mạng rồi!" stats={[[res.score, 'điểm'], [res.ok, 'chọn đúng'], [accOf(res.ok, res.bad) + '%', 'chính xác']]} missed={res.missed} onAgain={onAgain} onExit={onExit} />;
   return (
     <div className="fall choice">
-      <p className="gb-tip">👉 {mode.tip} · phím 1, 2, 3</p>
-      <div className="hud"><span>🏆 {hud.score}</span><span>combo {hud.combo}</span><span className="hearts">{'♥'.repeat(Math.max(0, hud.lives))}</span><button className="icon-btn" onClick={onExit}>✕</button></div>
+      <p className="gb-tip"><span className={'gb-icon ' + mode.group}><Icon name={mode.ico} size={26} /></span>{mode.tip} · phím 1, 2, 3</p>
+      <div className="hud"><span className="il"><Icon name="cup" size={22} /> {hud.score}</span><span>combo {hud.combo}</span><span className="hearts">{Array.from({ length: Math.max(0, hud.lives) }, (_, k) => <Icon key={k} name="tim" size={20} />)}</span><button className="icon-btn" onClick={onExit}>✕</button></div>
       <div className="stage" ref={stageRef}>
         {cur && <div ref={cardRef} className={'w solo' + (fb ? (fb.ok ? ' okc' : ' badc') : '')}><em className="tag">{POS_VI[cur.w.pos]}</em><span>{cur.w.disp}</span></div>}
         <div className="danger" />

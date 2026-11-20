@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import Icon from './Icon.jsx';
+import Logo from './Logo.jsx';
 import { useApp } from '../ctx.js';
 import { MODES, GROUPS } from '../modes.js';
 import { LANGS } from '../lib/words.js';
@@ -7,63 +9,66 @@ import AuthModal from './AuthModal.jsx';
 import { statsData } from '../lib/stats.js';
 import PiperToast from './PiperToast.jsx';
 
-const TABS = [['home', '🏠', 'Tổng quan'], ['learn', '📚', 'Học'], ['speak', '🎙️', 'Nói'], ['settings', '⚙️', 'Cài đặt']];
+// Thanh tab dưới (điện thoại)
+const TABS = [['home', 'tong-quan', 'Tổng quan'], ['learn', 'tat-ca-bai-hoc', 'Học'], ['listen', 'nghe-roi-go', 'Nghe'], ['speak', 'noi-chuyen-ai', 'Nói'], ['me', 'toi', 'Tôi']];
 
 export default function Layout({ children }) {
-  const { lang, setLang, route, go, theme, toggleTheme, setAuthOpen } = useApp();
+  const { lang, setLang, route, go, theme, toggleTheme, setAuthOpen, playing } = useApp();
   const [open, setOpen] = useState(false);
   const info = useCloud();
   const nav = r => { go(r); setOpen(false); };
   const name = info.user ? (info.user.user_metadata?.full_name || info.user.email || 'Tài khoản').split('@')[0] : 'Khách';
-  const onAcct = () => {
-    if (info.cloudEnabled) setAuthOpen(true);
-    else alert('Chưa cấu hình Supabase nên đang ở chế độ khách (lưu trên máy). Xem README để bật đăng nhập.');
-  };
   const st = statsData();
-  const inGame = MODES.some(m => m.id === route && m.group !== 'talk');
-  const tabOn = t => t === route || (t === 'learn' && inGame);
+  const onAcct = () => {
+    if (innerWidth <= 900) { nav('me'); return; }
+    if (info.cloudEnabled) setAuthOpen(true);
+    else nav('me');
+  };
+  const curMode = MODES.find(m => m.id === route);
+  const tabOn = t => t === route || (t === 'learn' && curMode && !['listen', 'speak'].includes(route));
 
   return (
-    <div className="app">
+    <div className={'app' + (playing ? ' is-playing' : '')}>
       <aside className={'side' + (open ? ' open' : '')}>
-        <div className="brand" onClick={() => nav('home')}><span className="logo">T</span> TypeLingo</div>
+        <div className="brand" onClick={() => nav('home')} role="link" aria-label="Về trang chủ"><Logo height={46} /></div>
         <nav>
-          <a className={route === 'home' ? 'on' : ''} onClick={() => nav('home')}><i>🏠</i><span>Tổng quan</span></a>
-          <a className={route === 'learn' ? 'on' : ''} onClick={() => nav('learn')}><i>📚</i><span>Tất cả bài học</span></a>
+          <a className={'easy' + (route === 'home' ? ' on' : '')} onClick={() => nav('home')}><i><Icon name="tong-quan" /></i><span>Tổng quan</span></a>
+          <a className={'easy' + (route === 'learn' ? ' on' : '')} onClick={() => nav('learn')}><i><Icon name="tat-ca-bai-hoc" /></i><span>Tất cả bài học</span></a>
           {GROUPS.map(g => (
             <div key={g.id} className="navgroup">
               <h6><span className={'gdot ' + g.id} />{g.name}</h6>
               {MODES.filter(m => m.group === g.id).map(m => (
-                <a key={m.id} className={route === m.id ? 'on' : ''} onClick={() => nav(m.id)}><i>{m.icon}</i><span>{m.name}</span></a>
+                <a key={m.id} className={g.id + (route === m.id ? ' on' : '')} onClick={() => nav(m.id)}><i><Icon name={m.ico} /></i><span>{m.name}</span></a>
               ))}
             </div>
           ))}
           <div className="navgroup">
             <h6>Khác</h6>
-            <a className={route === 'settings' ? 'on' : ''} onClick={() => nav('settings')}><i>⚙️</i><span>Cài đặt</span></a>
+            <a className={'talk' + (route === 'me' ? ' on' : '')} onClick={() => nav('me')}><i><Icon name="toi" /></i><span>Tôi</span></a>
+            <a className={'talk' + (route === 'settings' ? ' on' : '')} onClick={() => nav('settings')}><i><Icon name="cai-dat" /></i><span>Cài đặt</span></a>
           </div>
         </nav>
       </aside>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
-      <div className={'main' + (inGame ? ' ingame' : '')}>
+      <div className="main">
         <header className="top">
           <button className="icon-btn menu" aria-label="Mở menu" onClick={() => setOpen(o => !o)}>☰</button>
-          <span className="top-brand" onClick={() => nav('home')}><span className="logo sm">T</span>TypeLingo</span>
+          <span className="top-brand" onClick={() => nav('home')} role="link" aria-label="Về trang chủ"><Logo height={34} className="tb-full" /><Logo variant="icon" height={38} className="tb-icon" /></span>
           <div className="grow" />
-          <span className={'hchip fire' + (st.playedToday ? ' on' : '')} title="Số ngày học liên tiếp">🔥 {st.streak}</span>
-          <span className={'hchip xp' + (st.xpToday >= st.goal ? ' on' : '')} title={`XP hôm nay / mục tiêu ${st.goal} XP`}>⚡ {st.xpToday}<small>/{st.goal}</small></span>
-          <div className="seg" role="group" aria-label="Ngôn ngữ học">
+          <span className={'hchip fire' + (st.playedToday ? ' on' : '')} title="Số ngày học liên tiếp"><Icon name={st.playedToday ? 'streak' : 'streak-off'} size={22} /> {st.streak}</span>
+          <span className={'hchip xp' + (st.xpToday >= st.goal ? ' on' : '')} title={`XP hôm nay / mục tiêu ${st.goal} XP`}><Icon name="xp" size={22} /> {st.xpToday}<small>/{st.goal}</small></span>
+          <div className="seg desk-only" role="group" aria-label="Ngôn ngữ học">
             {Object.values(LANGS).map(l => <button key={l.code} className={lang === l.code ? 'on' : ''} onClick={() => setLang(l.code)} title={l.name}>{l.flag}</button>)}
           </div>
-          <button className="icon-btn" onClick={toggleTheme} aria-label="Đổi giao diện">{theme === 'dark' ? '☀️' : '🌙'}</button>
-          <button className="acct" onClick={onAcct}>
+          <button className="icon-btn desk-only" onClick={toggleTheme} aria-label="Đổi giao diện sáng/tối"><Icon name={theme === 'dark' ? 'theme-light' : 'theme-dark'} size={24} /></button>
+          <button className="acct" onClick={onAcct} aria-label="Tài khoản">
             <span className="avatar">{name[0].toUpperCase()}</span><span className="aname">{name}</span>
             {info.user && <i className={'dot ' + info.status} />}
           </button>
         </header>
         <main className="content">{children}</main>
-        {!inGame && <nav className="tabbar">
-          {TABS.map(([r, ic, l]) => <a key={r} className={tabOn(r) ? 'on' : ''} onClick={() => nav(r)}><i>{ic}</i><span>{l}</span></a>)}
+        {!playing && <nav className="tabbar">
+          {TABS.map(([r, ic, l]) => <a key={r} className={tabOn(r) ? 'on' : ''} onClick={() => nav(r)}><i><Icon name={ic} size={28} /></i><span>{l}</span></a>)}
         </nav>}
       </div>
       <AuthModal info={info} />

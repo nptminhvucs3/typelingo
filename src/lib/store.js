@@ -6,10 +6,12 @@ const ls = {
 };
 export { ls };
 
-const DEFAULT_SETTINGS = { method: 'telex', noDia: false, lang: 'en', viVoice: 'auto', dailyGoal: 20, sfx: true, speakEn: true, speakVi: true, speed: 1, confirm: 'space', theme: 'dark', geminiKey: '', textModel: 'gemini-3.8-flash', liveModel: 'gemini-3.8-live', voiceName: 'Puck', level: 'B1', ttsRate: 0.85, voices: {} };
+const DEFAULT_SETTINGS = { method: 'telex', noDia: false, lang: 'en', viVoice: 'auto', dailyGoal: 20, sfx: true, speakEn: true, speakVi: true, speed: 1, confirm: 'space', theme: 'light', geminiKey: '', textModel: 'gemini-3.8-flash', liveModel: 'gemini-3.8-live', voiceName: 'Puck', level: 'B1', ttsRate: 0.85, voices: {} };
 const saved = ls.get('tl_settings', {});
 export const settings = Object.assign({}, DEFAULT_SETTINGS, saved);
 if (saved.sound === false && saved.speakEn === undefined) { settings.speakEn = false; settings.speakVi = false; }
+// Giao diện pastel (20/11/2026): chuyển mọi người sang theme sáng một lần, sau đó tôn trọng lựa chọn của người dùng
+if (!saved.uiV3) { settings.theme = 'light'; settings.uiV3 = 1; settings.ts = Date.now(); ls.set('tl_settings', settings); }
 
 export const state = {
   prog: ls.get('tl_prog', {}),          // { 'en|pos': {box, ok, miss, fav, ts} }

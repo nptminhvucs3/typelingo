@@ -9,6 +9,7 @@ import Home from './pages/Home.jsx';
 import Settings from './pages/Settings.jsx';
 import Speak from './pages/Speak.jsx';
 import Learn from './pages/Learn.jsx';
+import Me from './pages/Me.jsx';
 import ModeShell from './components/ModeShell.jsx';
 import { modeById } from './modes.js';
 
@@ -22,6 +23,7 @@ export default function App() {
   const [ver, setVer] = useState(0);
   const [theme, setTheme] = useState(settings.theme);
   const [authOpen, setAuthOpen] = useState(false);
+  const [playing, setPlaying] = useState(false); // đang trong một lượt chơi → ẩn thanh tab dưới
   const refresh = useCallback(() => setVer(v => v + 1), []);
 
   useEffect(() => { const f = () => setRoute(getRoute()); addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
@@ -41,11 +43,12 @@ export default function App() {
   if (route === 'settings') page = <Settings />;
   else if (route === 'speak') page = <Speak />;
   else if (route === 'learn') page = <Learn />;
+  else if (route === 'me') page = <Me />;
   else if (m) page = <ModeShell key={m.id + lang} mode={m} />;
   else page = <Home />;
 
   return (
-    <AppCtx.Provider value={{ lang, setLang, all, go, refresh, theme, toggleTheme, authOpen, setAuthOpen, route }}>
+    <AppCtx.Provider value={{ lang, setLang, all, go, refresh, theme, toggleTheme, authOpen, setAuthOpen, route, playing, setPlaying }}>
       <Layout>{page}</Layout>
     </AppCtx.Provider>
   );

@@ -1,12 +1,14 @@
 // Màn chuẩn bị chung cho mọi chế độ: hướng dẫn 3 bước + nút "Bắt đầu ngay".
 // Chọn chủ đề / loại từ là tùy chọn (thu gọn), lựa chọn được nhớ theo ngôn ngữ.
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Icon from './Icon.jsx';
 import { useApp } from '../ctx.js';
 import { POS_VI, P, needReview, pickWeighted } from '../lib/words.js';
 import { hasKey, ensureSentences } from '../lib/gemini.js';
 import { addSession, state, saveBest, ls } from '../lib/store.js';
 import { groupOf } from '../modes.js';
 import { calcXp } from '../lib/stats.js';
+import { MascotSay } from './Mascot.jsx';
 import FallGame from '../pages/FallGame.jsx';
 import Reverse from '../pages/Reverse.jsx';
 import Listen from '../pages/Listen.jsx';
@@ -20,7 +22,7 @@ const GAMES = { fall: FallGame, fall1: FallGame, reverse: Reverse, listen: Liste
 const strip = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').toLowerCase();
 
 export default function ModeShell({ mode }) {
-  const { all, lang } = useApp();
+  const { all, lang, setPlaying } = useApp();
   const key = 'tl_pick_' + lang;
   const saved = ls.get(key, { sel: [], pos: [] });
   const [sel, setSelRaw] = useState(() => new Set(saved.sel));
@@ -51,6 +53,8 @@ export default function ModeShell({ mode }) {
     if (k.startsWith('__')) setSel(sel.has(k) ? new Set() : new Set([k]));
     else { const n = new Set(sel); n.delete('__review'); n.delete('__fav'); n.has(k) ? n.delete(k) : n.add(k); setSel(n); }
   };
+  useEffect(() => { setPlaying(!!play); }, [play]); // eslint-disable-line
+  useEffect(() => () => setPlaying(false), []); // eslint-disable-line
   const shown = q.trim() ? topics.filter(t => strip(t).includes(strip(q.trim()))) : topics;
 
   async function start() {
@@ -96,8 +100,8 @@ export default function ModeShell({ mode }) {
   const g = groupOf(mode.group);
   return (
     <div className="page narrow">
-      <div className="mode-hero">
-        <span className="hero-icon">{mode.icon}</span>
+      <div className={'mode-hero ' + mode.group}>
+        <span className="hero-icon"><Icon name={mode.ico} size={52} /></span>
         <div>
           <span className={'badge ' + mode.group}>{g?.short}</span>
           <h1>{mode.name}</h1>
@@ -105,12 +109,12 @@ export default function ModeShell({ mode }) {
         </div>
       </div>
 
-      <section className="card">
-        <h3>Cách chơi</h3>
+      <MascotSay mood={mode.id === 'listen' ? 'listening' : ['fall', 'fall1', 'reverse', 'cloze'].includes(mode.id) ? 'typing' : 'study'} size={96} className={mode.group}>
+        <h3>Cách chơi nè!</h3>
         <ol className="howto">{mode.steps.map((s, i) => <li key={i}><span>{i + 1}</span>{s}</li>)}</ol>
-      </section>
+      </MascotSay>
 
-      <section className="card startcard">
+      <section className={'card startcard ' + mode.group}>
         <div className="pickline">
           <div>
             <small>Học với</small>
@@ -120,16 +124,16 @@ export default function ModeShell({ mode }) {
           <button className="btn ghost small" onClick={() => setOpen(o => !o)}>{open ? 'Thu gọn' : 'Đổi chủ đề'}</button>
         </div>
         {review.length > 0 && !sel.has('__review') && (
-          <button className="quick" onClick={() => setSel(new Set(['__review']))}>🔁 Có <b>{review.length}</b> từ bạn hay sai, bấm để ôn chúng</button>
+          <button className="quick" onClick={() => setSel(new Set(['__review']))}><Icon name="on-loi-sai" size={22} /> Có <b>{review.length}</b> từ bạn hay sai, bấm để ôn chúng</button>
         )}
         {open && (
           <div className="picker">
             <input placeholder="🔍 Tìm chủ đề…" value={q} onChange={e => setQ(e.target.value)} />
             <div className="topics">
               {!q && <>
-                <div className={'topic' + (!sel.size ? ' sel' : '')} onClick={() => setSel(new Set())}><b>🌐 Tất cả chủ đề</b><small>{all.length} từ</small></div>
-                <div className={'topic special' + (sel.has('__review') ? ' sel' : '')} onClick={() => toggleTopic('__review')}><b>🔁 Ôn từ hay sai</b><small>{review.length} từ</small></div>
-                <div className={'topic special' + (sel.has('__fav') ? ' sel' : '')} onClick={() => toggleTopic('__fav')}><b>★ Yêu thích</b><small>{favs.length} từ</small></div>
+                <div className={'topic' + (!sel.size ? ' sel' : '')} onClick={() => setSel(new Set())}><b><Icon name="tat-ca-bai-hoc" size={18} /> Tất cả chủ đề</b><small>{all.length} từ</small></div>
+                <div className={'topic special' + (sel.has('__review') ? ' sel' : '')} onClick={() => toggleTopic('__review')}><b><Icon name="on-loi-sai" size={18} /> Ôn từ hay sai</b><small>{review.length} từ</small></div>
+                <div className={'topic special' + (sel.has('__fav') ? ' sel' : '')} onClick={() => toggleTopic('__fav')}><b><Icon name="sao" size={18} /> Yêu thích</b><small>{favs.length} từ</small></div>
               </>}
               {shown.map(t => {
                 const ws = all.filter(w => w.topic === t);
@@ -146,7 +150,7 @@ export default function ModeShell({ mode }) {
             <div className="chips">{Object.entries(POS_VI).map(([k, v]) => <span key={k} className={'chip' + (pos.has(k) ? ' sel' : '')} onClick={() => togPos(k)}>{v}</span>)}</div>
           </div>
         )}
-        <button className="btn big block" onClick={start} disabled={loading}>{loading ? 'Đang tạo câu ví dụ bằng AI…' : '▶ Bắt đầu ngay'}</button>
+        <button className="btn big block" onClick={start} disabled={loading}>{loading ? 'Đang tạo câu ví dụ bằng AI…' : <><Icon name="bat-dau" size={26} /> Bắt đầu ngay</>}</button>
         {mode.needsEx && !hasKey() && <p className="note center">Chỉ dùng những từ có sẵn câu ví dụ. Nhập Gemini key trong Cài đặt để có thêm câu.</p>}
         {err && <p className="note err">{err}</p>}
       </section>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Icon from '../components/Icon.jsx';
 import { useApp } from '../ctx.js';
 import { settings, saveSettings, state, saveProg, saveCustom, resetProgress, replaceAll, exportAll } from '../lib/store.js';
 import { mergeProgress } from '../lib/merge.js';
@@ -59,10 +60,10 @@ export default function Settings() {
 
   return (
     <div className="page narrow">
-      <div className="page-head"><h1>⚙️ Cài đặt</h1></div>
+      <div className="page-head"><h1 className="il"><Icon name="cai-dat" size={40} /> Cài đặt</h1></div>
 
       <section className="card form">
-        <h3>🔊 Giọng đọc</h3>
+        <h3 className="il"><Icon name="nghe-roi-go" size={28} /> Giọng đọc</h3>
         <div className="grid2">
           <label>Giọng {LANGS[lang].name.toLowerCase()}
             <select value={voicePref(tl)} onChange={e => set('voices', { ...(settings.voices || {}), [lang]: e.target.value })}>
@@ -97,7 +98,7 @@ export default function Settings() {
       </section>
 
       <section className="card form">
-        <h3>🤖 Gemini AI</h3>
+        <h3 className="il"><Icon name="noi-chuyen-ai" size={28} /> Gemini AI</h3>
         <p className="note">Dùng cho chế độ Nói chuyện với AI và để tự sinh câu ví dụ. Lấy key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a>. Key chỉ lưu trên trình duyệt này, không đồng bộ lên tài khoản.</p>
         <label>API key<input type="password" value={settings.geminiKey} onChange={e => set('geminiKey', e.target.value.trim())} placeholder="AIza…" autoComplete="off" /></label>
         <div className="row"><button className="btn small" onClick={testKey} disabled={!settings.geminiKey}>Thử key</button><span className="note">{keyMsg}</span></div>
@@ -110,7 +111,7 @@ export default function Settings() {
       </section>
 
       <section className="card form">
-        <h3>⌨️ Gõ phím</h3>
+        <h3 className="il"><Icon name="tu-roi-go-1-buoc" size={28} /> Gõ phím</h3>
         <div className="grid2">
           <label>Bộ gõ tiếng Việt<select value={settings.method} onChange={e => set('method', e.target.value)}><option value="telex">Telex</option><option value="vni">VNI</option></select></label>
           <label>Xác nhận từ (chế độ từ rơi)<select value={settings.confirm} onChange={e => set('confirm', e.target.value)}><option value="space">Nhấn Space hoặc Enter</option><option value="auto">Tự động khi gõ đủ</option></select></label>
@@ -120,7 +121,7 @@ export default function Settings() {
       </section>
 
       <section className="card form">
-        <h3>💾 Dữ liệu</h3>
+        <h3 className="il"><Icon name="cai-dat" size={28} /> Dữ liệu</h3>
         <div className="row wrap">
           <button className="btn ghost small" onClick={() => download('typelingo-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(exportAll()), 'application/json')}>Xuất tiến độ</button>
           <label className="btn ghost small">Nhập tiến độ<input type="file" accept=".json" hidden onChange={importFile} /></label>
