@@ -6,7 +6,7 @@ const ls = {
 };
 export { ls };
 
-const DEFAULT_SETTINGS = { method: 'telex', noDia: false, lang: 'en', viVoice: 'gt', speakEn: true, speakVi: true, speed: 1, confirm: 'space', theme: 'dark', geminiKey: '', textModel: 'gemini-3.8-flash', liveModel: 'gemini-3.8-live', voiceName: 'Puck', level: 'B1', ttsRate: 0.85, voices: {} };
+const DEFAULT_SETTINGS = { method: 'telex', noDia: false, lang: 'en', viVoice: 'auto', dailyGoal: 20, sfx: true, speakEn: true, speakVi: true, speed: 1, confirm: 'space', theme: 'dark', geminiKey: '', textModel: 'gemini-3.8-flash', liveModel: 'gemini-3.8-live', voiceName: 'Puck', level: 'B1', ttsRate: 0.85, voices: {} };
 const saved = ls.get('tl_settings', {});
 export const settings = Object.assign({}, DEFAULT_SETTINGS, saved);
 if (saved.sound === false && saved.speakEn === undefined) { settings.speakEn = false; settings.speakVi = false; }
@@ -37,6 +37,7 @@ export function saveBest() { ls.set('tl_best', state.best); }
 export function savePending() { ls.set('tl_pending', state.pending); }
 export function setUid(uid) { state.uid = uid; if (uid) ls.set('tl_uid', uid); else ls.del('tl_uid'); }
 export function addSession(s) {
+  state.last = s; // lượt vừa chơi, để màn kết quả hiện XP
   state.pending.push(s); savePending();
   state.history.push(s); if (state.history.length > 500) state.history.splice(0, state.history.length - 500);
   ls.set('tl_history', state.history); emit('session');

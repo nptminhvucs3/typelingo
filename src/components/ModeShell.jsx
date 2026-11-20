@@ -6,6 +6,7 @@ import { POS_VI, P, needReview, pickWeighted } from '../lib/words.js';
 import { hasKey, ensureSentences } from '../lib/gemini.js';
 import { addSession, state, saveBest, ls } from '../lib/store.js';
 import { groupOf } from '../modes.js';
+import { calcXp } from '../lib/stats.js';
 import FallGame from '../pages/FallGame.jsx';
 import Reverse from '../pages/Reverse.jsx';
 import Listen from '../pages/Listen.jsx';
@@ -15,7 +16,7 @@ import Quiz from '../pages/Quiz.jsx';
 import Match from '../pages/Match.jsx';
 import FallChoice from '../pages/FallChoice.jsx';
 
-const GAMES = { fall: FallGame, reverse: Reverse, listen: Listen, cloze: Cloze, flash: Flash, quiz: Quiz, match: Match, fallchoice: FallChoice };
+const GAMES = { fall: FallGame, fall1: FallGame, reverse: Reverse, listen: Listen, cloze: Cloze, flash: Flash, quiz: Quiz, match: Match, fallchoice: FallChoice };
 const strip = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').toLowerCase();
 
 export default function ModeShell({ mode }) {
@@ -87,7 +88,7 @@ export default function ModeShell({ mode }) {
       if (s.score > state.best.score) state.best.score = s.score;
       if ((s.wpm || 0) > state.best.wpm) state.best.wpm = s.wpm;
       saveBest();
-      addSession({ at: Date.now(), score: s.score, wpm: s.wpm || 0, accuracy: s.accuracy, words: s.words, topic: play.label, mode: mode.id });
+      addSession({ at: Date.now(), xp: calcXp(s), score: s.score, wpm: s.wpm || 0, accuracy: s.accuracy, words: s.words, topic: play.label, mode: mode.id });
     };
     return <G key={play.k} mode={mode} items={play.items} label={play.label} lang={lang} onFinish={finish} onAgain={start} onExit={() => setPlay(null)} />;
   }

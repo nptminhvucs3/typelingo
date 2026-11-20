@@ -1,7 +1,10 @@
-// Giọng đọc. Ngoại ngữ: tự chọn giọng rõ nhất trên thiết bị (Natural/Online/Google/Apple),
-// nếu máy chỉ có giọng máy cũ (Microsoft David/Zira…) thì dùng giọng Google Dịch.
-// Người dùng có thể chọn giọng cụ thể và tốc độ trong Cài đặt (settings.voices, lưu riêng từng máy).
+// Giọng đọc.
+// Ngoại ngữ: giọng rõ nhất của thiết bị (Natural/Online/Google/Apple); nếu máy chỉ có giọng máy cũ
+// (Microsoft David/Zira…) thì dùng giọng Google Dịch.
+// Tiếng Việt: giọng Việt của thiết bị (nếu có) → Google Dịch → Piper (chạy trong trình duyệt, xem piper.js).
+// Lưu ý: Google Dịch trả 404 nếu request có Referer, vì vậy index.html đặt <meta name="referrer" content="no-referrer">.
 import { settings } from './store.js';
+import { piperUrl, PIPER_VOICES } from './piper.js';
 
 let VOICES = [];
 const load = () => { try { VOICES = speechSynthesis.getVoices() || []; } catch (e) { VOICES = []; } };
@@ -16,7 +19,7 @@ function score(v, lang) {
   else if (/online/i.test(n)) s += 80;
   else if (/^google/i.test(n)) s += 70;
   else if (/enhanced|premium|siri/i.test(n)) s += 65;
-  else if (/samantha|ava|allison|susan|karen|daniel|serena|moira|tessa|anna|petra|markus|yannick|helena/i.test(n)) s += 50;
+  else if (/samantha|ava|allison|susan|karen|daniel|serena|moira|tessa|anna|petra|markus|yannick|helena|linh/i.test(n)) s += 50;
   else if (/microsoft/i.test(n)) s -= 40; // giọng SAPI cũ trên Windows
   else if (/espeak|festival|pico/i.test(n)) s -= 80;
   else s += 10;
@@ -33,11 +36,25 @@ export function voicesFor(lang) {
 export const voiceFor = lang => voicesFor(lang)[0];
 const isGood = (v, lang) => v && score(v, lang.toLowerCase()) >= 0;
 
-// Lựa chọn giọng: 'auto' | 'gt' (Google Dịch) | voiceURI
+// Lựa chọn giọng ngoại ngữ: 'auto' | 'gt' (Google Dịch) | voiceURI
 export const voicePref = lang => settings.voices?.[lang.slice(0, 2)] || 'auto';
 export const rateOf = () => settings.ttsRate || 0.85;
+// Giọng Việt: 'auto' | 'gt' | 'device' | 'piper' (bản cũ lưu 'gt' = tự động)
+export const viPref = () => (settings.viVoice === 'gt' || !settings.viVoice ? 'auto' : settings.viVoice);
+
+// Google Dịch hỏng (bị chặn / mất mạng) thì bỏ qua nó 5 phút để không bị trễ mỗi lần đọc
+let gtDownUntil = 0;
+const gtDown = () => Date.now() < gtDownUntil;
+
 // Mô tả cho trang Cài đặt
 export function describeVoice(lang) {
+  if (lang.startsWith('vi')) {
+    const p = viPref(), dv = voiceFor('vi-VN');
+    if (p === 'piper') return 'Piper (chạy trên máy)';
+    if (p === 'device') return dv ? dv.name : 'máy chưa có giọng Việt';
+    if (dv && isGood(dv, 'vi-vn')) return dv.name;
+    return gtDown() ? 'Piper (Google Dịch đang lỗi)' : 'Google Dịch, dự phòng Piper';
+  }
   const pref = voicePref(lang);
   if (pref === 'gt') return 'Google Dịch (cần mạng)';
   if (pref !== 'auto') return VOICES.find(v => v.voiceURI === pref)?.name || 'không tìm thấy, dùng tự động';
@@ -45,39 +62,59 @@ export function describeVoice(lang) {
   return isGood(v, lang) ? v.name : 'Google Dịch (máy chưa có giọng rõ)';
 }
 
-let audio = null, utter = null;
-function speakGT(t, code, rate, fail) {
+let audio = null, utter = null, seq = 0;
+function stopAll() {
+  seq++;
+  try { if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel(); } catch (e) { /* bỏ qua */ }
+  if (audio) { try { audio.onerror = null; audio.pause(); } catch (e) { /* bỏ qua */ } }
+}
+function playUrl(src, rate, fail) {
   try {
-    if (audio) { audio.onerror = null; audio.pause(); }
-    const a = audio = new Audio(); a.referrerPolicy = 'no-referrer';
-    a.onerror = fail;
-    a.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${code}&q=${encodeURIComponent(t.slice(0, 190))}`;
-    a.playbackRate = Math.max(0.5, Math.min(1.5, rate / 0.9));
+    const a = audio = new Audio();
+    a.onerror = () => fail && fail();
+    a.defaultPlaybackRate = a.playbackRate = Math.max(0.5, Math.min(1.5, rate));
     a.preservesPitch = true;
-    const p = a.play(); if (p && p.catch) p.catch(fail);
-  } catch (e) { fail(); }
+    a.src = src;
+    const p = a.play(); if (p && p.catch) p.catch(e => { if (e?.name !== 'AbortError' && fail) fail(); });
+  } catch (e) { fail && fail(); }
+}
+function speakGT(t, code, rate, fail) {
+  if (gtDown()) { fail(); return; }
+  const my = seq;
+  playUrl(`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${code}&q=${encodeURIComponent(t.slice(0, 190))}`, rate / 0.9,
+    () => { gtDownUntil = Date.now() + 5 * 60e3; if (my === seq) fail(); });
+}
+function speakPiper(t, code, rate, fail) {
+  if (!PIPER_VOICES[code]) { fail && fail(); return; }
+  const my = seq;
+  piperUrl(t, code).then(url => { if (my === seq) playUrl(url, rate, fail); }).catch(() => { if (my === seq && fail) fail(); });
 }
 function speakDevice(t, lang, rate, v) {
   v = v || voiceFor(lang);
-  if (!v || typeof speechSynthesis === 'undefined') return;
+  if (!v || typeof speechSynthesis === 'undefined') return false;
   try {
-    speechSynthesis.cancel();
     const u = utter = new SpeechSynthesisUtterance(t); // giữ tham chiếu để Chrome không thu hồi giữa chừng
     u.lang = v.lang; u.rate = rate; u.voice = v; u.pitch = 1;
     speechSynthesis.speak(u);
-  } catch (e) { /* bỏ qua */ }
+    return true;
+  } catch (e) { return false; }
 }
-// rate: bỏ trống = tốc độ người dùng chọn; số nhỏ hơn 1 nhân thêm (ví dụ 0.7 = chậm hơn).
+
+// slow: bỏ trống = tốc độ người dùng chọn; số nhỏ hơn 1 nhân thêm (ví dụ 0.7 = chậm hơn).
 export function speak(text, lang, slow) {
   if (!text || !text.trim()) return;
-  try { if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel(); } catch (e) { /* bỏ qua */ }
-  if (audio) { try { audio.pause(); } catch (e) { /* bỏ qua */ } }
+  stopAll();
   const code = lang.slice(0, 2);
-  const rate = code === 'vi' ? 1 : Math.max(0.4, rateOf() * (slow || 1));
+  const rate = Math.max(0.4, (code === 'vi' ? 1 : rateOf()) * (slow || 1));
   const dev = v => () => speakDevice(text, lang, rate, v);
+
   if (code === 'vi') {
-    if (settings.viVoice !== 'device') speakGT(text, 'vi', rate, dev()); else dev()();
-    return;
+    const p = viPref(), dv = voiceFor('vi-VN');
+    const piper = () => speakPiper(text, 'vi', rate, dev(dv));
+    if (p === 'piper') return piper();
+    if (p === 'device') { if (!dev(dv)()) speakGT(text, 'vi', rate, piper); return; }
+    if (dv && isGood(dv, 'vi-vn')) return dev(dv)();
+    return speakGT(text, 'vi', rate, piper);
   }
   const pref = voicePref(lang);
   if (pref === 'gt') return speakGT(text, code, rate, dev());

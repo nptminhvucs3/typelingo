@@ -5,6 +5,8 @@ import { foreignOk, mark, accOf, hintOf } from '../lib/answer.js';
 import { speak } from '../lib/speech.js';
 import Result from '../components/Result.jsx';
 import GameBar from '../components/GameBar.jsx';
+import CheckBar from '../components/CheckBar.jsx';
+import { sfx } from '../lib/sfx.js';
 
 const N = 10;
 export default function Listen({ mode, items, lang, onFinish, onAgain, onExit }) {
@@ -22,14 +24,14 @@ export default function Listen({ mode, items, lang, onFinish, onAgain, onExit })
 
   const finishWord = ok => {
     mark(w, ok && tries === 0 && reveal <= 1);
-    setFb({ ok }); setLog(l => [...l, { w, ok, first: tries === 0 && reveal <= 1 }]);
+    setFb({ ok }); setLog(l => [...l, { w, ok, first: tries === 0 && reveal <= 1 }]); ok ? sfx.ok() : sfx.bad();
     speak(w.en, tl);
   };
   const submit = () => {
     if (fb) { next(); return; }
     if (!val.trim()) { speak(w.en, tl); return; }
     const ok = foreignOk(w, val);
-    if (!ok && tries === 0) { setTries(1); setVal(''); setReveal(r => Math.max(r, 2)); speak(w.en, tl, 0.7); ref.current?.focus(); return; }
+    if (!ok && tries === 0) { sfx.bad(); setTries(1); setVal(''); setReveal(r => Math.max(r, 2)); speak(w.en, tl, 0.7); ref.current?.focus(); return; }
     finishWord(ok);
   };
   const next = () => {
@@ -61,14 +63,10 @@ export default function Listen({ mode, items, lang, onFinish, onAgain, onExit })
         {tries === 1 && !fb && <p className="note err center">Chưa đúng. Đã hiện thêm chữ cái, nghe chậm lại và thử lần nữa.</p>}
         <input ref={ref} className={'answer-in ' + (fb ? (fb.ok ? 'ok' : 'bad') : '')} value={val} onChange={e => setVal(e.target.value)} readOnly={!!fb}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }} placeholder="Gõ từ bạn nghe được rồi nhấn Enter…" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false" enterKeyHint="done" />
-        {fb && <div className={'feedback ' + (fb.ok ? 'ok' : 'bad')}>{fb.ok ? '✅ ' : '❌ Đáp án: '}<b>{w.disp}</b> {w.ipa && <i>{w.ipa}</i>} · {w.vi}</div>}
-        <div className="row">
-          {!fb && <button className="btn ghost" onClick={() => { setReveal(r => Math.min(r + 1, w.disp.length)); ref.current?.focus(); }}>💡 Thêm chữ</button>}
-          {!fb && <button className="btn ghost" onClick={() => finishWord(false)}>Xem đáp án</button>}
-          <div className="grow" />
-          <button className="btn" onClick={submit}>{fb ? 'Tiếp →' : 'Kiểm tra'}</button>
-        </div>
+        {!fb && <div className="row center"><button className="btn ghost small" onClick={() => { setReveal(r => Math.min(r + 1, w.disp.length)); ref.current?.focus(); }}>💡 Hiện thêm chữ</button></div>}
       </div>
+      <CheckBar state={fb ? (fb.ok ? 'ok' : 'bad') : null} onCheck={submit} canCheck={!!val.trim()} onNext={next} answer={w.disp}
+        detail={fb && <>{w.disp} {w.ipa} · {w.vi}</>} skip={{ label: 'Xem đáp án', onClick: () => finishWord(false) }} />
     </div>
   );
 }

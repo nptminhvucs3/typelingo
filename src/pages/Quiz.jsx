@@ -6,6 +6,8 @@ import { mark, accOf, blankOf, distractors } from '../lib/answer.js';
 import { speak } from '../lib/speech.js';
 import Result from '../components/Result.jsx';
 import GameBar from '../components/GameBar.jsx';
+import CheckBar from '../components/CheckBar.jsx';
+import { sfx } from '../lib/sfx.js';
 
 export default function Quiz({ mode, items, lang, onFinish, onAgain, onExit }) {
   const { all } = useApp();
@@ -20,7 +22,7 @@ export default function Quiz({ mode, items, lang, onFinish, onAgain, onExit }) {
   const choose = o => {
     if (pick || !o) return;
     const ok = o.id === q.w.id;
-    setPick(o); mark(q.w, ok); setLog(l => [...l, { w: q.w, ok }]);
+    setPick(o); mark(q.w, ok); setLog(l => [...l, { w: q.w, ok }]); ok ? sfx.ok() : sfx.bad();
     speak(q.w.ex, LANGS[lang].tts);
   };
   const next = () => {
@@ -51,8 +53,8 @@ export default function Quiz({ mode, items, lang, onFinish, onAgain, onExit }) {
             </button>
           ))}
         </div>
-        {pick && <button className="btn big block" onClick={next} autoFocus>Tiếp →</button>}
       </div>
+      <CheckBar state={pick ? (pick.id === q.w.id ? 'ok' : 'bad') : null} onNext={next} answer={q.w.disp} detail={pick && <>{q.w.disp} = {q.w.vi}</>} />
     </div>
   );
 }

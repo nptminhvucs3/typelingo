@@ -4,6 +4,8 @@ import { MODES, GROUPS } from '../modes.js';
 import { LANGS } from '../lib/words.js';
 import { useCloud } from '../lib/hooks.js';
 import AuthModal from './AuthModal.jsx';
+import { statsData } from '../lib/stats.js';
+import PiperToast from './PiperToast.jsx';
 
 const TABS = [['home', '🏠', 'Tổng quan'], ['learn', '📚', 'Học'], ['speak', '🎙️', 'Nói'], ['settings', '⚙️', 'Cài đặt']];
 
@@ -17,6 +19,7 @@ export default function Layout({ children }) {
     if (info.cloudEnabled) setAuthOpen(true);
     else alert('Chưa cấu hình Supabase nên đang ở chế độ khách (lưu trên máy). Xem README để bật đăng nhập.');
   };
+  const st = statsData();
   const inGame = MODES.some(m => m.id === route && m.group !== 'talk');
   const tabOn = t => t === route || (t === 'learn' && inGame);
 
@@ -47,6 +50,8 @@ export default function Layout({ children }) {
           <button className="icon-btn menu" aria-label="Mở menu" onClick={() => setOpen(o => !o)}>☰</button>
           <span className="top-brand" onClick={() => nav('home')}><span className="logo sm">T</span>TypeLingo</span>
           <div className="grow" />
+          <span className={'hchip fire' + (st.playedToday ? ' on' : '')} title="Số ngày học liên tiếp">🔥 {st.streak}</span>
+          <span className={'hchip xp' + (st.xpToday >= st.goal ? ' on' : '')} title={`XP hôm nay / mục tiêu ${st.goal} XP`}>⚡ {st.xpToday}<small>/{st.goal}</small></span>
           <div className="seg" role="group" aria-label="Ngôn ngữ học">
             {Object.values(LANGS).map(l => <button key={l.code} className={lang === l.code ? 'on' : ''} onClick={() => setLang(l.code)} title={l.name}>{l.flag}</button>)}
           </div>
@@ -62,6 +67,7 @@ export default function Layout({ children }) {
         </nav>}
       </div>
       <AuthModal info={info} />
+      <PiperToast />
     </div>
   );
 }

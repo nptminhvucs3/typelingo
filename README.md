@@ -27,6 +27,7 @@ Supabase cấu hình giống bản cũ (`.env.local` với `VITE_SUPABASE_URL`, 
 | Đảo chiều · Việt → ngoại ngữ | Bảng 2 cột, 10 dòng mỗi lượt: trái là nghĩa Việt, phải là ô gõ. Enter để chấm từng dòng, 💡 gợi ý thêm chữ (trừ nửa điểm). |
 | Nghe rồi gõ | Từng từ: nghe (có nút nghe chậm), gõ lại. Sai lần đầu được nghe chậm và thử lại. 12 từ mỗi lượt. |
 | Điền từ vào câu | Câu ví dụ khuyết một từ, có nghĩa và chữ cái đầu làm gợi ý, nút thêm chữ. 10 câu. |
+| Từ rơi · gõ 1 bước | Như từ rơi 2 bước nhưng chỉ gõ từ ngoại ngữ; gõ xong nghĩa hiện dưới khung. Space hoặc Enter để xác nhận. |
 | Thẻ chọn nghĩa | Từ ở trên, chọn 1 trong 3 nghĩa tiếng Việt (phím 1/2/3). Chọn sai thì thẻ quay lại cuối bộ. 12 thẻ. |
 | Trắc nghiệm câu | Chọn 1 trong 4 từ để điền vào câu (kiểu bài đọc). Đáp án nhiễu cùng loại từ, ưu tiên cùng chủ đề. |
 | Ghép cặp | 3 bảng × 6 cặp từ – nghĩa. |

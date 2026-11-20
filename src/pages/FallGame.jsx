@@ -1,4 +1,5 @@
-// Chế độ giữ nguyên kịch bản cũ: từ rơi, gõ từ ngoại ngữ → hiện nghĩa → gõ nghĩa tiếng Việt (Telex/VNI).
+// Từ rơi. Chế độ 'fall' giữ kịch bản cũ: gõ từ ngoại ngữ → hiện nghĩa → gõ nghĩa tiếng Việt (Telex/VNI).
+// Chế độ 'fall1' (gõ 1 bước): chỉ gõ từ ngoại ngữ, xong là hiện nghĩa bên dưới.
 import React, { useEffect, useRef, useState } from 'react';
 import { settings } from '../lib/store.js';
 import { compose } from '../lib/engine.js';
@@ -6,6 +7,7 @@ import { POS_VI, LANGS, weight } from '../lib/words.js';
 import { M, mark } from '../lib/answer.js';
 import { speak } from '../lib/speech.js';
 import Result from '../components/Result.jsx';
+import { sfx } from '../lib/sfx.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -19,6 +21,7 @@ export default function FallGame({ mode, items, label, lang, onFinish, onAgain, 
   const [paused, setPaused] = useState(false);
   const [result, setResult] = useState(null);
   const tl = LANGS[lang].tts;
+  const one = mode.id === 'fall1';
 
   useEffect(() => {
     const stage = stageRef.current, input = inputRef.current;
@@ -34,6 +37,9 @@ export default function FallGame({ mode, items, label, lang, onFinish, onAgain, 
       else w.el.innerHTML = `<em class="tag">${esc(POS_VI[d.pos] || d.pos)}</em><span><span class="done">${esc(d.disp.slice(0, typed))}</span>${esc(d.disp.slice(typed))}</span>`;
       w.el.className = 'w ' + w.stage + (typed ? ' act' : '');
       w.typed = typed; w.h = w.el.offsetHeight; w.wd = w.el.offsetWidth;
+      // Nghĩa tiếng Việt thường dài hơn từ gốc: đẩy thẻ vào lại trong khung để không bị cắt chữ
+      const nx = clamp(w.x, 6, Math.max(6, W() - w.wd - 6));
+      if (nx !== w.x) { w.x = nx; place(w); }
     }
     function pick() {
       const on = g.words.map(w => w.d.id), firsts = g.words.filter(w => w.stage === 'en').map(w => w.d.en[0]);
@@ -72,15 +78,14 @@ export default function FallGame({ mode, items, label, lang, onFinish, onAgain, 
       g.combo++; g.score += Math.round((w.stage === 'en' ? w.d.en : w.d.vi).length * 10 * mult());
       if (w.stage === 'en') {
         if (settings.speakEn) speak(w.d.en, tl);
-        w.stage = 'vi'; w.y = Math.max(0, w.y - 60); render(w, 0); place(w); return;
-      }
-      if (settings.speakVi) speak(w.d.vi, 'vi-VN');
-      setLearned(w.d); remove(w); mark(w.d, true); g.done++;
+        if (!one) { w.stage = 'vi'; w.y = Math.max(0, w.y - 60); render(w, 0); place(w); return; }
+      } else if (settings.speakVi) speak(w.d.vi, 'vi-VN');
+      sfx.ok(); setLearned(w.d); remove(w); mark(w.d, true); g.done++;
       if (g.done % 8 === 0) { g.level++; if (g.level > 20) { end(true); return; } }
       pushHud();
     }
     function miss(w) {
-      remove(w); g.lives--; g.combo = 0; mark(w.d, false); g.missed.push(w.d);
+      sfx.bad(); remove(w); g.lives--; g.combo = 0; mark(w.d, false); g.missed.push(w.d);
       if (g.buf && !g.words.some(x => M.matches(x, g.buf))) { g.buf = ''; input.value = ''; g.dirty = false; }
       refresh(); updateHint(); pushHud();
       if (g.lives <= 0) end(false);
@@ -159,7 +164,7 @@ export default function FallGame({ mode, items, label, lang, onFinish, onAgain, 
   }
   return (
     <div className="fall">
-      <p className="gb-tip">👉 {mode.tip}, khi thẻ chuyển xanh thì gõ nghĩa tiếng Việt · Esc tạm dừng</p>
+      <p className="gb-tip">👉 {mode.tip}{one ? '' : ', khi thẻ chuyển xanh thì gõ nghĩa tiếng Việt'} · Esc tạm dừng</p>
       <div className="hud">
         <span>🏆 {hud.score}</span><span>Mốc {Math.min(hud.level, 20)}/20 · {label}</span>
         <span>{hud.wpm} WPM</span><span>x{hud.combo.toFixed(1)}</span><span className="hearts">{'♥'.repeat(Math.max(0, hud.lives))}</span>

@@ -3,7 +3,8 @@ import { useApp } from '../ctx.js';
 import { settings, saveSettings, state, saveProg, saveCustom, resetProgress, replaceAll, exportAll } from '../lib/store.js';
 import { mergeProgress } from '../lib/merge.js';
 import { POS_VI, LANGS } from '../lib/words.js';
-import { speak, voiceFor, voicesFor, voicePref, describeVoice } from '../lib/speech.js';
+import { speak, voicesFor, voicePref, describeVoice, viPref } from '../lib/speech.js';
+import { piperStored, preloadPiper, onPiperStatus } from '../lib/piper.js';
 import { generate } from '../lib/gemini.js';
 
 function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
@@ -16,6 +17,12 @@ export default function Settings() {
   const [keyMsg, setKeyMsg] = useState('');
   const set = (k, v) => { settings[k] = v; saveSettings(); bump(x => x + 1); };
   const tl = LANGS[lang].tts;
+  const [piper, setPiper] = useState({});
+  useEffect(() => {
+    piperStored().then(ok => ok && setPiper(p => ({ ...p, stored: true })));
+    return onPiperStatus(st => setPiper(p => ({ ...p, pct: st.loading ? st.pct : null, stored: p.stored || !!st.ready, err: st.error ? 'Không tải được: ' + st.error : '' })));
+  }, []);
+  const loadPiper = () => { setPiper(p => ({ ...p, pct: 0, err: '' })); preloadPiper().catch(() => {}); };
   useEffect(() => { // danh sách giọng nạp chậm trên Chrome
     if (typeof speechSynthesis === 'undefined') return;
     const f = () => setTimeout(() => bump(x => x + 1), 0);
@@ -72,10 +79,21 @@ export default function Settings() {
         <div className="row wrap">
           <button className="btn small" onClick={() => speak(lang === 'de' ? 'Guten Morgen! Wie geht es dir heute?' : 'Good morning! How are you today?', tl)}>🔊 Nghe thử</button>
         </div>
+        <label className="check"><input type="checkbox" checked={settings.sfx !== false} onChange={e => set('sfx', e.target.checked)} /> Âm thanh khi trả lời đúng / sai</label>
         <label className="check"><input type="checkbox" checked={settings.speakEn} onChange={e => set('speakEn', e.target.checked)} /> Tự đọc từ {LANGS[lang].name.toLowerCase()} khi hiện từ mới</label>
         <label className="check"><input type="checkbox" checked={settings.speakVi} onChange={e => set('speakVi', e.target.checked)} /> Đọc nghĩa tiếng Việt (chế độ từ rơi)</label>
-        <label>Giọng tiếng Việt<select value={settings.viVoice} onChange={e => set('viVoice', e.target.value)}><option value="gt">Google Dịch (cần mạng)</option><option value="device">Giọng của thiết bị</option></select></label>
-        <div className="row"><button className="btn ghost small" onClick={() => speak('xin chào, nhà bếp', 'vi-VN')}>🔊 Thử giọng Việt</button>{!voiceFor('vi-VN') && <span className="note">Máy chưa có giọng Việt</span>}</div>
+        <label>Giọng tiếng Việt<select value={viPref()} onChange={e => set('viVoice', e.target.value)}>
+          <option value="auto">Tự động (giọng máy → Google Dịch → Piper)</option>
+          <option value="device">Giọng của thiết bị</option>
+          <option value="piper">Piper: chạy ngay trên máy, không cần mạng sau khi tải</option>
+        </select></label>
+        <p className="note">Đang dùng: <b>{describeVoice('vi-VN')}</b>. Piper là giọng mã nguồn mở, tải về một lần (~63MB) rồi lưu trong trình duyệt.</p>
+        <div className="row wrap">
+          <button className="btn ghost small" onClick={() => speak('Xin chào, hôm nay bạn học được bao nhiêu từ mới?', 'vi-VN')}>🔊 Thử giọng Việt</button>
+          {piper.stored ? <span className="note ok">✓ Đã tải giọng Piper</span>
+            : <button className="btn ghost small" disabled={piper.pct != null} onClick={loadPiper}>{piper.pct != null ? `Đang tải ${piper.pct}%…` : '⬇ Tải giọng Piper (dùng khi mất mạng)'}</button>}
+          {piper.err && <span className="note err">{piper.err}</span>}
+        </div>
       </section>
 
       <section className="card form">

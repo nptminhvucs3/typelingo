@@ -5,6 +5,8 @@ import { mark, accOf, blankOf, hintOf } from '../lib/answer.js';
 import { speak } from '../lib/speech.js';
 import Result from '../components/Result.jsx';
 import GameBar from '../components/GameBar.jsx';
+import CheckBar from '../components/CheckBar.jsx';
+import { sfx } from '../lib/sfx.js';
 
 const norm = s => s.trim().toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/\s+/g, ' ');
 
@@ -28,7 +30,7 @@ export default function Cloze({ mode, items, lang, onFinish, onAgain, onExit }) 
     const ok = norm(val) === norm(q.b[1]) || norm(val) === norm(q.w.en);
     reveal_(ok);
   };
-  const reveal_ = ok => { mark(q.w, ok && reveal <= 1); setFb({ ok }); setLog(l => [...l, { w: q.w, ok }]); speak(q.w.ex, tl); ref.current?.focus(); };
+  const reveal_ = ok => { mark(q.w, ok && reveal <= 1); setFb({ ok }); setLog(l => [...l, { w: q.w, ok }]); speak(q.w.ex, tl); ok ? sfx.ok() : sfx.bad(); };
 
   if (!qs.length) return <div className="page"><div className="card"><p>Không tìm được câu phù hợp cho các từ này.</p><button className="btn" onClick={onExit}>Quay lại</button></div></div>;
   if (i >= qs.length) {
@@ -41,16 +43,12 @@ export default function Cloze({ mode, items, lang, onFinish, onAgain, onExit }) 
       <div className="card exercise">
         <div className="hintbox"><span>Từ cần điền nghĩa là: <b>{q.w.vi}</b> · {POS_VI[q.w.pos] || q.w.pos}</span><small>{q.b[1].length} chữ cái, chữ đầu là “{q.b[1][0]}”</small></div>
         <p className="sentence">{q.b[0]}<span className={'blank ' + (fb ? (fb.ok ? 'ok' : 'bad') : '')}>{fb ? q.b[1] : hintOf(q.b[1], reveal)}</span>{q.b[2]}</p>
-        {fb && <div className={'feedback ' + (fb.ok ? 'ok' : 'bad')}>{fb.ok ? '✅ Đúng rồi!' : <>❌ Đáp án: <b>{q.b[1]}</b></>}{q.w.exvi && <><br /><em>{q.w.exvi}</em></>}</div>}
         <input ref={ref} className="answer-in" value={val} onChange={e => setVal(e.target.value)} readOnly={!!fb}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }} placeholder="Gõ từ còn thiếu rồi nhấn Enter…" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false" enterKeyHint="done" />
-        <div className="row">
-          {!fb && <button className="btn ghost" onClick={() => { setReveal(r => Math.min(r + 1, q.b[1].length)); ref.current?.focus(); }}>💡 Thêm chữ</button>}
-          {!fb && <button className="btn ghost" onClick={() => reveal_(false)}>Xem đáp án</button>}
-          <div className="grow" />
-          <button className="btn" onClick={submit}>{fb ? 'Tiếp →' : 'Kiểm tra'}</button>
-        </div>
+        {!fb && <div className="row center"><button className="btn ghost small" onClick={() => { setReveal(r => Math.min(r + 1, q.b[1].length)); ref.current?.focus(); }}>💡 Hiện thêm chữ</button></div>}
       </div>
+      <CheckBar state={fb ? (fb.ok ? 'ok' : 'bad') : null} onCheck={submit} canCheck={!!val.trim()} onNext={submit} answer={q.b[1]}
+        detail={fb && q.w.exvi && <em>{q.w.exvi}</em>} skip={{ label: 'Xem đáp án', onClick: () => reveal_(false) }} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { mark, accOf, distractors } from '../lib/answer.js';
 import { settings } from '../lib/store.js';
 import { speak } from '../lib/speech.js';
 import Result from '../components/Result.jsx';
+import { sfx } from '../lib/sfx.js';
 
 export default function FallChoice({ mode, items, lang, onFinish, onAgain, onExit }) {
   const { all } = useApp();
@@ -36,7 +37,7 @@ export default function FallChoice({ mode, items, lang, onFinish, onAgain, onExi
     if (ok) { s.ok++; s.combo++; s.score += 10 + Math.min(s.combo, 10) * 2; speak(cur.w.en, tl); }
     else { s.bad++; s.combo = 0; s.lives--; s.missed.push(cur.w); }
     setHud({ lives: s.lives, score: s.score, combo: s.combo });
-    setFb({ pick: o, ok });
+    setFb({ pick: o, ok }); ok ? sfx.ok() : sfx.bad();
     setTimeout(() => { if (s.over) return; if (s.lives <= 0) end(); else nextWord(); }, ok ? 450 : 1300);
   };
 

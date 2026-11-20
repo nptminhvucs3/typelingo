@@ -8,6 +8,8 @@ import { speak } from '../lib/speech.js';
 import { settings } from '../lib/store.js';
 import Result from '../components/Result.jsx';
 import GameBar from '../components/GameBar.jsx';
+import CheckBar from '../components/CheckBar.jsx';
+import { sfx } from '../lib/sfx.js';
 
 const N = 12;
 export default function Flash({ mode, items, lang, onFinish, onAgain, onExit }) {
@@ -39,7 +41,7 @@ export default function Flash({ mode, items, lang, onFinish, onAgain, onExit }) 
     const first = !log.some(x => x.w.id === w.id);
     if (first) mark(w, ok);
     setLog(l => [...l, { w, ok }]);
-    if (!ok) speak(w.en, tl);
+    if (ok) sfx.ok(); else { sfx.bad(); speak(w.en, tl); }
   };
   const next = () => {
     const ok = pick.id === w.id;
@@ -56,7 +58,7 @@ export default function Flash({ mode, items, lang, onFinish, onAgain, onExit }) 
     const k = e => {
       if (!w) return;
       if (!pick && ['1', '2', '3'].includes(e.key)) choose(opts[+e.key - 1]);
-      else if (pick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); next(); }
+      else if (pick && (e.key === 'Enter' || e.key === ' ') && e.target.tagName !== 'BUTTON') { e.preventDefault(); next(); }
     };
     addEventListener('keydown', k); return () => removeEventListener('keydown', k);
   });
@@ -79,7 +81,7 @@ export default function Flash({ mode, items, lang, onFinish, onAgain, onExit }) 
           <button className="sound" onClick={() => speak(w.en, tl, 0.7)} aria-label="Nghe chậm">🐢</button>
         </div>
       </div>
-      <p className="ask">{pick ? (ok ? '✅ Chính xác!' : '❌ Chưa đúng, nghĩa đúng là ô màu xanh') : 'Từ này nghĩa là gì?'}</p>
+      <p className="ask">Từ này nghĩa là gì?</p>
       <div className="choices col">
         {opts.map((o, k) => (
           <button key={o.id} className={'opt big' + (pick ? (o.id === w.id ? ' ok' : pick === o ? ' bad' : ' dim') : '')} onClick={() => choose(o)}>
@@ -87,13 +89,8 @@ export default function Flash({ mode, items, lang, onFinish, onAgain, onExit }) 
           </button>
         ))}
       </div>
-      {pick && (
-        <div className={'feedback ' + (ok ? 'ok' : 'bad')}>
-          <b>{w.disp}</b> = {w.vi}
-          {w.ex && <><br /><span>{w.ex}</span><br /><em>{w.exvi}</em></>}
-        </div>
-      )}
-      {pick && <button className="btn big block" onClick={next} autoFocus>Tiếp →</button>}
+      <CheckBar state={pick ? (ok ? 'ok' : 'bad') : null} onNext={next} answer={w.vi}
+        detail={pick && (w.ex ? <>{w.disp} = {w.vi}<br />{w.ex}<br /><em>{w.exvi}</em></> : <>{w.disp} = {w.vi}</>)} />
     </div>
   );
 }

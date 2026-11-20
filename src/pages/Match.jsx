@@ -4,6 +4,7 @@ import { LANGS, pickWeighted, shuffle } from '../lib/words.js';
 import { mark, accOf } from '../lib/answer.js';
 import { speak } from '../lib/speech.js';
 import Result from '../components/Result.jsx';
+import { sfx } from '../lib/sfx.js';
 import GameBar from '../components/GameBar.jsx';
 
 const PER = 6, BOARDS = 3;
@@ -34,7 +35,7 @@ export default function Match({ mode, items, lang, onFinish, onAgain, onExit }) 
     if (!l || !r) return;
     if (l.id === r.id) {
       const g = new Set(gone); g.add(l.id); setGone(g);
-      mark(l, !errs.has(l.id)); speak(l.en, LANGS[lang].tts);
+      mark(l, !errs.has(l.id)); speak(l.en, LANGS[lang].tts); sfx.ok();
       const s = { ...stat, ok: stat.ok + 1 }; setStat(s);
       setSelL(null); setSelR(null);
       if (board.left.every(w => g.has(w.id))) {
@@ -42,7 +43,7 @@ export default function Match({ mode, items, lang, onFinish, onAgain, onExit }) 
         else { onFinish({ score: s.ok * 10 - s.bad * 3, accuracy: accOf(s.ok, s.bad), words: s.ok }); setTimeout(() => setDone(true), 400); }
       }
     } else {
-      setStat({ ...stat, bad: stat.bad + 1 }); setErrs(new Set([...errs, l.id]));
+      sfx.bad(); setStat({ ...stat, bad: stat.bad + 1 }); setErrs(new Set([...errs, l.id]));
       setWrong([l.id, r.id]); setTimeout(() => { setWrong(null); setSelL(null); setSelR(null); }, 500);
     }
   };
