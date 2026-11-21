@@ -77,6 +77,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .aname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); position: absolute; top: 3px; left: 28px; border: 2px solid var(--card); }
 .dot.syncing { background: var(--butter-d); } .dot.error, .dot.offline { background: var(--bad); }
+.note.sync-error, .note.sync-offline { color: var(--bad-d); }
+.modal h3 .link { min-height: 0; font-size: .75em; font-weight: 600; margin-left: 6px; }
 .content { flex: 1; overflow-y: auto; padding: 28px 28px 40px; }
 .scrim { display: none; }
 .tabbar { display: none; }

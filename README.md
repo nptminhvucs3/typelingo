@@ -11,7 +11,22 @@ npm test         # kiểm tra bộ gõ với toàn bộ từ Anh/Đức + logic 
 npm run build
 ```
 
-Supabase cấu hình giống bản cũ (`.env.local` với `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; SQL trong `supabase/`). Không có Supabase thì chạy ở chế độ khách.
+Không có Supabase thì app chạy ở chế độ khách (tiến độ chỉ lưu trên máy).
+
+## Đăng nhập và đồng bộ (Supabase)
+
+1. Tạo project ở supabase.com.
+2. **SQL Editor**: chạy toàn bộ `supabase/schema.sql` (chạy lại được, có thêm cột `mode`, `xp` cho `sessions`). Muốn kho từ chung trên máy chủ thì chạy thêm `supabase/seed.sql`.
+3. **Project Settings → API**: chép `Project URL` (dạng `https://<mã>.supabase.co`, **không phải** publishable key `sb_publishable_…`) và `anon public key` vào `.env.local` (xem `.env.example`).
+   Báo lỗi `permission denied for table …` thì chạy `supabase/grants.sql` (project mới không tự cấp quyền bảng cho Data API; đã gộp vào cuối `schema.sql`).
+4. **Authentication → URL Configuration**: Site URL và Redirect URLs gồm `http://localhost:5173/` và địa chỉ GitHub Pages. Thiếu thì link email / Google quay về sai trang.
+5. (Tuỳ chọn, chưa bật thì app tự ẩn nút Google) **Authentication → Providers → Google**: bật, dán Client ID/Secret từ Google Cloud Console (Authorized redirect URI là `https://<project>.supabase.co/auth/v1/callback`).
+
+Tính năng: đăng ký / đăng nhập email, Google, quên mật khẩu (link email → đặt mật khẩu mới), đổi tên hiển thị, đồng bộ tiến độ từng từ, từ riêng, cài đặt (trừ key Gemini và giọng đọc), lịch sử lượt chơi (kèm chế độ + XP nên chuỗi ngày/XP giống nhau trên mọi máy). Tự đồng bộ 3 giây sau mỗi thay đổi, khi có mạng lại và khi rời tab.
+
+- Dữ liệu chơi lúc chưa đăng nhập được gộp vào tài khoản ở lần đăng nhập đầu tiên.
+- Đăng xuất: đồng bộ lần cuối rồi xoá tiến độ khỏi máy (để người khác đăng nhập trên cùng máy không bị trộn dữ liệu).
+- Dùng luồng PKCE (`?code=` trên URL) vì app định tuyến bằng hash. Hệ quả: link xác nhận email / đặt lại mật khẩu phải mở **trên cùng trình duyệt** đã yêu cầu. Mở ở trình duyệt khác thì email vẫn được xác nhận, chỉ cần đăng nhập lại bằng mật khẩu.
 
 ## Giao diện
 
@@ -68,7 +83,7 @@ src/
 - Live trên iOS Safari có thể không thu âm được; khi đó dùng chế độ dự phòng.
 - Bản này **chưa có PWA/offline** như bản cũ (không chọn khi lên kế hoạch). Có thể thêm lại bằng `vite-plugin-pwa`.
 - Từ riêng (CSV) vẫn chỉ áp dụng cho tiếng Anh.
-- Lịch sử chơi lưu thêm trường `mode`, nhưng bảng `sessions` trên Supabase chưa có cột này nên không đẩy lên.
+- Đăng nhập/đồng bộ mới chạy thử với Supabase giả lập (Playwright chặn request), chưa chạy với project thật.
 
 ## Đăng lên GitHub Pages
 Có sẵn `.github/workflows/deploy.yml`: mỗi lần push lên `main` sẽ chạy `npm test`, build rồi đăng lên Pages.

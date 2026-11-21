@@ -8,12 +8,13 @@ import { useCloud } from '../lib/hooks.js';
 import { statsData } from '../lib/stats.js';
 import * as cloud from '../lib/sync.js';
 import Mascot from '../components/Mascot.jsx';
+import { syncText, confirmSignOut } from '../components/AuthModal.jsx';
 
 export default function Me() {
   const { lang, setLang, theme, toggleTheme, go, setAuthOpen, all, refresh } = useApp();
   const info = useCloud();
   const d = statsData();
-  const name = info.user ? (info.user.user_metadata?.full_name || info.user.email || 'Tài khoản').split('@')[0] : 'Khách';
+  const name = cloud.displayName(info.user);
   const mastered = all.filter(w => P(w.id)?.box >= 3).length;
 
   return (
@@ -23,13 +24,14 @@ export default function Me() {
         <div className="grow">
           <h2>{name}</h2>
           <p className="note">{info.user ? info.user.email : info.cloudEnabled ? 'Đang dùng chế độ khách, tiến độ chỉ lưu trên máy này.' : 'Chế độ khách (chưa cấu hình đăng nhập), tiến độ lưu trên máy này.'}</p>
+          {info.user && <p className={'note sync-' + info.status}>{syncText(info)}</p>}
         </div>
         <Mascot mood="wave" size={84} />
       </section>
       {info.cloudEnabled && (
         <div className="row wrap me-acct">
           {info.user
-            ? <><button className="btn ghost" onClick={async () => { await cloud.syncNow(); refresh(); }}>🔄 Đồng bộ ngay</button><button className="btn ghost" onClick={async () => { await cloud.signOut(); refresh(); }}>Đăng xuất</button></>
+            ? <><button className="btn ghost" disabled={info.status === 'syncing'} onClick={async () => { await cloud.syncNow(); refresh(); }}>🔄 Đồng bộ ngay</button><button className="btn ghost" onClick={() => setAuthOpen(true)}>Tài khoản</button><button className="btn ghost" onClick={async () => { if (await confirmSignOut(info)) refresh(); }}>Đăng xuất</button></>
             : <button className="btn" onClick={() => setAuthOpen(true)}>Đăng nhập / Tạo tài khoản</button>}
         </div>
       )}
@@ -58,6 +60,7 @@ export default function Me() {
       </section>
 
       <button className="btn ghost block" onClick={() => go('settings')}><Icon name="cai-dat" size={24} /> Cài đặt khác (giọng đọc, Gemini, bộ gõ, dữ liệu)</button>
+      <p className="note center"><a href="privacy.html" target="_blank" rel="noopener">Chính sách quyền riêng tư</a></p>
     </div>
   );
 }

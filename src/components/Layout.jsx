@@ -5,6 +5,8 @@ import { useApp } from '../ctx.js';
 import { MODES, GROUPS } from '../modes.js';
 import { LANGS } from '../lib/words.js';
 import { useCloud } from '../lib/hooks.js';
+import { displayName } from '../lib/sync.js';
+import { syncText } from './AuthModal.jsx';
 import AuthModal from './AuthModal.jsx';
 import { statsData } from '../lib/stats.js';
 import PiperToast from './PiperToast.jsx';
@@ -17,7 +19,7 @@ export default function Layout({ children }) {
   const [open, setOpen] = useState(false);
   const info = useCloud();
   const nav = r => { go(r); setOpen(false); };
-  const name = info.user ? (info.user.user_metadata?.full_name || info.user.email || 'Tài khoản').split('@')[0] : 'Khách';
+  const name = displayName(info.user);
   const st = statsData();
   const onAcct = () => {
     if (innerWidth <= 900) { nav('me'); return; }
@@ -61,7 +63,7 @@ export default function Layout({ children }) {
             {Object.values(LANGS).map(l => <button key={l.code} className={lang === l.code ? 'on' : ''} onClick={() => setLang(l.code)} title={l.name}>{l.flag}</button>)}
           </div>
           <button className="icon-btn desk-only" onClick={toggleTheme} aria-label="Đổi giao diện sáng/tối"><Icon name={theme === 'dark' ? 'theme-light' : 'theme-dark'} size={24} /></button>
-          <button className="acct" onClick={onAcct} aria-label="Tài khoản">
+          <button className="acct" onClick={onAcct} aria-label="Tài khoản" title={info.user ? syncText(info) : info.cloudEnabled ? 'Đăng nhập để đồng bộ' : 'Chế độ khách'}>
             <span className="avatar">{name[0].toUpperCase()}</span><span className="aname">{name}</span>
             {info.user && <i className={'dot ' + info.status} />}
           </button>

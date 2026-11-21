@@ -30,7 +30,10 @@ export default function App() {
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => {
     cloud.initAuth(() => { setTheme(settings.theme); setLangState(settings.lang); refresh(); });
+    // Bấm link đặt lại mật khẩu / link xác nhận email → mở hộp tài khoản
+    const off = cloud.onStatus(i => { if (i.recovery || i.notice) setAuthOpen(true); });
     cloud.fetchRemoteWords().then(r => r && setRemote(r)).catch(() => {});
+    return off;
   }, [refresh]);
 
   const setLang = l => { settings.lang = l; saveSettings(); setLangState(l); };

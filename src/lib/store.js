@@ -48,7 +48,7 @@ export function mergeHistory(rows) {
   const seen = new Set(state.history.map(x => x.at)); let add = 0;
   for (const r of rows) {
     const at = new Date(r.played_at).getTime(); if (seen.has(at)) continue; seen.add(at);
-    state.history.push({ at, score: r.score, wpm: r.wpm, accuracy: r.accuracy, words: r.words_done, topic: r.topic }); add++;
+    state.history.push({ at, score: r.score, wpm: r.wpm, accuracy: r.accuracy, words: r.words_done, topic: r.topic, ...(r.mode ? { mode: r.mode } : {}), ...(r.xp != null ? { xp: r.xp } : {}) }); add++;
   }
   if (add) { state.history.sort((a, b) => a.at - b.at); if (state.history.length > 500) state.history.splice(0, state.history.length - 500); ls.set('tl_history', state.history); }
 }

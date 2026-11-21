@@ -21,13 +21,18 @@ Người dùng giao tiếp bằng tiếng Việt; trả lời bằng tiếng Vi�
   - Câu ví dụ thiếu (kể cả tiếng Đức) do Gemini sinh khi bắt đầu lượt chơi, cache ở `tl_gen_sentences`.
   - Tên model để sửa được trong Cài đặt. Mặc định: `gemini-3.8-flash` (văn bản), `gemini-3.8-live` (Live), theo tài liệu Google tháng 11/2026.
 - **Giữ Supabase** (email + Google) như bản cũ. Chưa cấu hình thì chạy chế độ khách.
+  - **Luồng PKCE** (`flowType: 'pkce'` trong `sync.js`): implicit flow trả `#access_token=` sẽ đè lên hash router. `readUrlResult` dọn `?code=`/lỗi trên URL, lỗi link → `info.notice` (App tự mở AuthModal).
+  - Không gọi Supabase trong callback `onAuthStateChange` (supabase-js có thể treo) → `setTimeout`. Đăng ký listener sớm để bắt `PASSWORD_RECOVERY` → `info.recovery` → AuthModal hiện form đặt mật khẩu mới.
+  - Đăng xuất (`confirmSignOut` trong AuthModal): đồng bộ lần cuối rồi `wipeLocalUserData` (chống trộn dữ liệu khi đổi tài khoản). Dữ liệu khách được gộp vào tài khoản ở lần đăng nhập đầu.
+  - `sessions` có cột `mode`, `xp` (schema.sql); `syncNow` tự bỏ 2 cột này nếu DB cũ chưa có. Tên hiển thị = `user_metadata.full_name` (`displayName`, `updateName`).
+  - Project thật: `pgpwkhjnghofkpofhiqk` (21/11). Google **chưa bật** (người dùng không muốn tạo Google Cloud) → nút Google tự ẩn theo `/auth/v1/settings` (`info.googleEnabled`). Project mới cần `supabase/grants.sql` (GRANT cho anon/authenticated), thiếu thì 401 permission denied.
 - **Bỏ PWA/offline** (người dùng không chọn). Có thể thêm lại nếu được yêu cầu.
 
 - **Dễ bắt đầu (yêu cầu 19/11):** chế độ chia 3 nhóm độ khó trong `modes.js` (`GROUPS`: Làm quen / Luyện tập / Thử thách / Nói), mỗi chế độ có `steps` (hướng dẫn 3 bước ở màn chuẩn bị) và `tip` (hiện trên `GameBar`). Trang chủ có lộ trình 3 bước (flash → match → quiz). Chọn chủ đề là tùy chọn, nút "Bắt đầu ngay" là chính.
 - **Giọng đọc:** `speech.js` chấm điểm giọng thiết bị (Natural/Online/Google cao, Microsoft SAPI cũ thấp); không có giọng tốt thì dùng Google Dịch TTS. Chọn giọng + tốc độ (`settings.voices`, `settings.ttsRate`) trong Cài đặt. `voices` chỉ lưu trên máy (không đồng bộ, giống `geminiKey`).
   - **Google Dịch TTS trả 404 nếu request có Referer** → `index.html` có `<meta name="referrer" content="no-referrer">` (thuộc tính `referrerPolicy` trên Audio không có tác dụng). Đừng bỏ thẻ meta này.
   - Tiếng Việt (`settings.viVoice`: auto/device/piper): giọng Việt của máy → Google Dịch → Piper (`lib/piper.js`, `@mintplex-labs/piper-tts-web`, giọng `vi_VN-vais1000-medium` ~63MB tải từ HuggingFace, wasm từ cdnjs/jsdelivr, lưu OPFS, import động). Google lỗi thì bỏ qua 5 phút.
-- **Tham khảo Duolingo (yêu cầu 20/11, chỉ lấy cách chơi/kiểu giao diện, không dùng thương hiệu):** XP mỗi lượt (`lib/stats.js` `calcXp`, lưu `xp` trong history, không đẩy lên Supabase), mục tiêu ngày `settings.dailyGoal`, chuỗi ngày + XP trên header, trang chủ là lộ trình nút tròn zíc-zắc + cột phải (mục tiêu, tuần, ôn lỗi, tổng kết), `CheckBar` (thanh xanh/đỏ ở đáy, nút Tiếp tục) dùng trong Flash/Quiz/Listen/Cloze, âm thanh `lib/sfx.js` (Web Audio, `settings.sfx`), nút dày kiểu 3D, màn hoàn thành có XP.
+- **Tham khảo Duolingo (yêu cầu 20/11, chỉ lấy cách chơi/kiểu giao diện, không dùng thương hiệu):** XP mỗi lượt (`lib/stats.js` `calcXp`, lưu `xp` trong history, đẩy lên cột `sessions.xp`), mục tiêu ngày `settings.dailyGoal`, chuỗi ngày + XP trên header, trang chủ là lộ trình nút tròn zíc-zắc + cột phải (mục tiêu, tuần, ôn lỗi, tổng kết), `CheckBar` (thanh xanh/đỏ ở đáy, nút Tiếp tục) dùng trong Flash/Quiz/Listen/Cloze, âm thanh `lib/sfx.js` (Web Audio, `settings.sfx`), nút dày kiểu 3D, màn hoàn thành có XP.
 - **Từ rơi:** `fall1` (gõ 1 bước, chỉ gõ từ ngoại ngữ) dùng chung `FallGame.jsx` với `fall`. Enter xác nhận như Space. Thẻ được đẩy vào trong khung khi đổi sang nghĩa Việt dài hơn (`render` clamp `w.x`), nghĩa quá dài thì xuống dòng.
 - **Giao diện pastel (20/11, theo `typelingo-ui-redesign.md`, đã hỏi kỹ người dùng):**
   - Theme sáng mặc định; `store.js` chuyển mọi người sang sáng **một lần** (cờ `settings.uiV3`), sau đó tôn trọng lựa chọn. Font Nunito.
@@ -56,7 +61,7 @@ Người dùng giao tiếp bằng tiếng Việt; trả lời bằng tiếng Vi�
 - Đã chạy thử mọi màn bằng Playwright + Chrome (1366px và 390px), không có lỗi runtime.
 - **Chưa test với Gemini key thật:** Live (setup message, model name, âm thanh), sinh câu, chat dự phòng, nhận xét. Việc đầu tiên nên làm khi người dùng có key.
 - Chưa test Supabase thật, chưa test iOS thật.
-- Bảng `sessions` trên Supabase chưa có cột `mode` (lượt chơi lưu `mode` cục bộ nhưng không đẩy lên).
+- Đăng nhập/đồng bộ (20/11): đã chạy thử bằng Playwright với Supabase giả (đăng ký, quên mật khẩu, đăng nhập → đẩy lượt chơi kèm mode/xp, kéo lịch sử về, đăng xuất xoá dữ liệu máy, link lỗi). **Chưa có project Supabase thật** (người dùng cần tạo, làm theo README mục "Đăng nhập và đồng bộ").
 
 ## Kiểm tra trên trình duyệt
 Chrome có ở `C:/Program Files/Google/Chrome/Application/chrome.exe`. Có thể cài tạm `playwright-core` rồi dùng `executablePath` để chụp màn hình. Gỡ ra sau khi xong. Lưu ý trên Windows phải import bằng URL `file:///E:/...`.

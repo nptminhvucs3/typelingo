@@ -63,6 +63,9 @@ create table if not exists public.sessions (
   words_done integer not null default 0,
   topic text
 );
+-- Bản v2: chế độ chơi + XP của lượt (để chuỗi ngày / XP đồng bộ giữa các máy)
+alter table public.sessions add column if not exists mode text;
+alter table public.sessions add column if not exists xp integer;
 create index if not exists sessions_user_time on public.sessions (user_id, played_at desc);
 
 -- 6) Hồ sơ (tên hiển thị – dùng cho bảng xếp hạng sau này)
@@ -114,3 +117,10 @@ drop policy if exists "profiles_own_read" on public.profiles;
 create policy "profiles_own_read" on public.profiles for select using (auth.uid() = id);
 drop policy if exists "profiles_own_update" on public.profiles;
 create policy "profiles_own_update" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
+
+-- ===== Quyền cho Data API (giống supabase/grants.sql) =====
+grant usage on schema public to anon, authenticated;
+grant select on public.words to anon, authenticated;
+grant select, insert, update, delete on public.user_words, public.progress, public.settings to authenticated;
+grant select, insert on public.sessions to authenticated;
+grant select, update on public.profiles to authenticated;
